@@ -13,6 +13,9 @@ public partial class MainWindow : FluentWindow
         if (DataContext is TrayViewModel vm)
             vm.ShowWindowRequested += () => ShowAndActivate();
 
+        if (Resources["ProcessListVM"] is ProcessListViewModel plvm)
+            plvm.Initialize();
+
         MouseLeftButtonDown += (_, _) => DragMove();
         Deactivated += (_, _) => Hide();
     }

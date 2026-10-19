@@ -1,0 +1,142 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using Microsoft.Diagnostics.Tracing.Parsers;
+using Microsoft.Diagnostics.Tracing.Session;
+
+namespace FlowCat.Services;
+
+public sealed class EtwNetworkMonitor : IDisposable
+{
+    const string SessionName = "FlowCatNetTrace";
+
+    TraceEventSession? _session;
+    Thread? _processingThread;
+    readonly Timer _rateTimer;
+
+    readonly ConcurrentDictionary<int, PidCounters> _counters = new();
+
+    public event Action<Dictionary<int, (long recv, long sent, double dlSpeed, double ulSpeed)>>? DataUpdated;
+    public bool IsAdmin { get; }
+
+    public EtwNetworkMonitor()
+    {
+        IsAdmin = IsRunningAsAdmin();
+        _rateTimer = new Timer(CalculateRates, null, Timeout.Infinite, Timeout.Infinite);
+    }
+
+    public bool Start()
+    {
+        if (!IsAdmin) return false;
+
+        try
+        {
+            // Clean up any leftover session
+            try { TraceEventSession.GetActiveSession(SessionName)?.Dispose(); } catch { }
+
+            _session = new TraceEventSession(SessionName)
+            {
+                StopOnDispose = true
+            };
+
+            _session.EnableKernelProvider(
+                KernelTraceEventParser.Keywords.NetworkTCPIP);
+
+            _session.Source.Kernel.TcpIpRecv += e =>
+                AddBytes(e.ProcessID, recv: e.size);
+            _session.Source.Kernel.TcpIpSend += e =>
+                AddBytes(e.ProcessID, sent: e.size);
+            _session.Source.Kernel.UdpIpRecv += e =>
+                AddBytes(e.ProcessID, recv: e.size);
+            _session.Source.Kernel.UdpIpSend += e =>
+                AddBytes(e.ProcessID, sent: e.size);
+
+            // IPv6
+            _session.Source.Kernel.TcpIpRecvIPV6 += e =>
+                AddBytes(e.ProcessID, recv: e.size);
+            _session.Source.Kernel.TcpIpSendIPV6 += e =>
+                AddBytes(e.ProcessID, sent: e.size);
+            _session.Source.Kernel.UdpIpRecvIPV6 += e =>
+                AddBytes(e.ProcessID, recv: e.size);
+            _session.Source.Kernel.UdpIpSendIPV6 += e =>
+                AddBytes(e.ProcessID, sent: e.size);
+
+            _processingThread = new Thread(() =>
+            {
+                try { _session.Source.Process(); } catch { }
+            })
+            {
+                IsBackground = true,
+                Name = "ETW-Network"
+            };
+            _processingThread.Start();
+            _rateTimer.Change(1000, 1000);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    void AddBytes(int pid, int recv = 0, int sent = 0)
+    {
+        var c = _counters.GetOrAdd(pid, _ => new PidCounters());
+        if (recv > 0) Interlocked.Add(ref c.BytesReceived, recv);
+        if (sent > 0) Interlocked.Add(ref c.BytesSent, sent);
+    }
+
+    void CalculateRates(object? _)
+    {
+        var snapshot = new Dictionary<int, (long recv, long sent, double dlSpeed, double ulSpeed)>();
+
+        foreach (var kvp in _counters)
+        {
+            var c = kvp.Value;
+            var recv = Interlocked.Read(ref c.BytesReceived);
+            var sent = Interlocked.Read(ref c.BytesSent);
+            var dlSpeed = Math.Max(0, recv - c.PrevReceived);
+            var ulSpeed = Math.Max(0, sent - c.PrevSent);
+            c.PrevReceived = recv;
+            c.PrevSent = sent;
+
+            if (recv > 0 || sent > 0)
+                snapshot[kvp.Key] = (recv, sent, dlSpeed, ulSpeed);
+        }
+
+        DataUpdated?.Invoke(snapshot);
+    }
+
+    public void RemoveProcess(int pid) => _counters.TryRemove(pid, out _);
+
+    public void Stop()
+    {
+        _rateTimer.Change(Timeout.Infinite, Timeout.Infinite);
+        try { _session?.Dispose(); } catch { }
+        _session = null;
+    }
+
+    public void Dispose()
+    {
+        Stop();
+        _rateTimer.Dispose();
+    }
+
+    static bool IsRunningAsAdmin()
+    {
+        try
+        {
+            using var identity = System.Security.Principal.WindowsIdentity.GetCurrent();
+            var principal = new System.Security.Principal.WindowsPrincipal(identity);
+            return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+        }
+        catch { return false; }
+    }
+
+    class PidCounters
+    {
+        public long BytesReceived;
+        public long BytesSent;
+        public long PrevReceived;
+        public long PrevSent;
+    }
+}
