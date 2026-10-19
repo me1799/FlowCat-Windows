@@ -7,7 +7,7 @@
     xmlns:vm="clr-namespace:FlowCat.ViewModels"
     xmlns:v="clr-namespace:FlowCat.Views"
     Title="FlowCat - 流量喵"
-    Width="380" Height="520"
+    Width="380" Height="560"
     WindowStartupLocation="CenterScreen"
     ShowInTaskbar="False"
     ResizeMode="NoResize"
@@ -15,7 +15,6 @@
 
     <ui:FluentWindow.Resources>
         <vm:TrayViewModel x:Key="TrayVM" />
-        <vm:ProcessListViewModel x:Key="ProcessListVM" />
     </ui:FluentWindow.Resources>
 
     <ui:FluentWindow.DataContext>
@@ -49,6 +48,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
@@ -67,8 +67,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding ConnectionLabel, Source={StaticResource ProcessListVM}}"
-                                   FontSize="11" VerticalAlignment="Center"
+                        <TextBlock x:Name="ConnLabel" FontSize="11" VerticalAlignment="Center"
                                    Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                    Margin="0,0,8,0" />
                         <Button Content="✕" Background="Transparent" BorderThickness="0"
@@ -77,14 +76,13 @@
                 </Grid>
 
                 <!-- Speed cards -->
-                <Grid Grid.Row="1" Margin="0,0,0,16">
+                <Grid Grid.Row="1" Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="12" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Download -->
                     <Border Grid.Column="0" CornerRadius="8" Padding="14"
                             Background="{DynamicResource ControlFillColorDefaultBrush}">
                         <StackPanel>
@@ -95,7 +93,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- Upload -->
                     <Border Grid.Column="2" CornerRadius="8" Padding="14"
                             Background="{DynamicResource ControlFillColorDefaultBrush}">
                         <StackPanel>
@@ -107,9 +104,19 @@
                     </Border>
                 </Grid>
 
-                <!-- Process list -->
-                <v:ProcessListView Grid.Row="2"
-                    DataContext="{StaticResource ProcessListVM}" />
+                <!-- Tab buttons -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,8">
+                    <RadioButton x:Name="TabProcess" Content="进程" IsChecked="True"
+                                 GroupName="Tabs" Click="OnTabChanged"
+                                 Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,12,0" />
+                    <RadioButton x:Name="TabStats" Content="统计"
+                                 GroupName="Tabs" Click="OnTabChanged"
+                                 Style="{StaticResource {x:Type RadioButton}}" />
+                </StackPanel>
+
+                <!-- Tab content -->
+                <v:ProcessListView x:Name="ProcessPanel" Grid.Row="3" />
+                <v:StatsView x:Name="StatsPanel" Grid.Row="3" Visibility="Collapsed" />
             </Grid>
         </Border>
     </Grid>

@@ -14,6 +14,9 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
     readonly Dictionary<int, ProcessTraffic> _rootMap = new();
     readonly Timer _connectionTimer;
 
+    LedgerService? _ledger;
+    string _currentSsid = "";
+
     bool _isAdmin;
     string _statusText = "正在初始化...";
     string _connectionLabel = "";
@@ -66,6 +69,8 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
             new PropertyGroupDescription(nameof(ProcessTraffic.GroupLabel)));
     }
 
+    public void SetLedger(LedgerService ledger) => _ledger = ledger;
+
     bool FilterProcess(object obj)
     {
         if (obj is not ProcessTraffic pt) return false;
@@ -84,6 +89,7 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
         }
 
         ConnectionLabel = WifiService.GetConnectionLabel();
+        _currentSsid = WifiService.GetCurrentSsid() ?? "";
         _connectionTimer.Change(5000, 5000);
 
         if (_monitor.Start())
@@ -161,6 +167,12 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
                 pt.InetBytesSent = data.InetSent;
                 pt.LanBytesReceived = data.LanRecv;
                 pt.LanBytesSent = data.LanSent;
+
+                _ledger?.Record(pt.ProcessName, pt.DisplayName,
+                    data.Recv, data.Sent,
+                    data.InetRecv, data.InetSent,
+                    data.LanRecv, data.LanSent,
+                    _currentSsid);
             }
 
             foreach (var pt in Processes)
@@ -182,7 +194,12 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
     void RefreshConnection(object? _)
     {
         var label = WifiService.GetConnectionLabel();
-        Application.Current?.Dispatcher.Invoke(() => ConnectionLabel = label);
+        var ssid = WifiService.GetCurrentSsid() ?? "";
+        Application.Current?.Dispatcher.Invoke(() =>
+        {
+            ConnectionLabel = label;
+            _currentSsid = ssid;
+        });
     }
 
     public void Dispose()
