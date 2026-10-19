@@ -100,7 +100,7 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
 
     void OnDataUpdated(Dictionary<int, PidTrafficData> snapshot)
     {
-        Application.Current?.Dispatcher.Invoke(() =>
+        Application.Current?.Dispatcher.BeginInvoke(() =>
         {
             var rootAccum = new Dictionary<int, AccumData>();
 
@@ -195,7 +195,7 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
     {
         var label = WifiService.GetConnectionLabel();
         var ssid = WifiService.GetCurrentSsid() ?? "";
-        Application.Current?.Dispatcher.Invoke(() =>
+        Application.Current?.Dispatcher.BeginInvoke(() =>
         {
             ConnectionLabel = label;
             _currentSsid = ssid;

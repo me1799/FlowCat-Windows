@@ -88,6 +88,37 @@ public sealed class LedgerService : IDisposable
         }
     }
 
+    public void RecordDiskIo(string processName, string displayName, long read, long write)
+    {
+        var today = DateTime.Now.ToString("yyyy-MM-dd");
+
+        lock (_lock)
+        {
+            var day = _ledger.Days.FirstOrDefault(d => d.Date == today);
+            if (day == null)
+            {
+                day = new DailyLedger { Date = today };
+                _ledger.Days.Add(day);
+            }
+
+            var rec = day.Records.FirstOrDefault(r => r.ProcessName == processName);
+            if (rec == null)
+            {
+                rec = new TrafficRecord
+                {
+                    Date = today,
+                    ProcessName = processName,
+                    DisplayName = displayName
+                };
+                day.Records.Add(rec);
+            }
+
+            rec.DiskRead = read;
+            rec.DiskWrite = write;
+            rec.DisplayName = displayName;
+        }
+    }
+
     public DailyLedger? GetDay(string date)
     {
         lock (_lock)
@@ -111,6 +142,13 @@ public sealed class LedgerService : IDisposable
         var day = GetDay(date);
         if (day == null) return (0, 0);
         return (day.Records.Sum(r => r.BytesReceived), day.Records.Sum(r => r.BytesSent));
+    }
+
+    public (long read, long write) GetDayDiskSummary(string date)
+    {
+        var day = GetDay(date);
+        if (day == null) return (0, 0);
+        return (day.Records.Sum(r => r.DiskRead), day.Records.Sum(r => r.DiskWrite));
     }
 
     public (long totalRecv, long totalSent) GetMonthSummary(int year, int month)

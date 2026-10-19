@@ -111,12 +111,16 @@
                                  Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,12,0" />
                     <RadioButton x:Name="TabStats" Content="统计"
                                  GroupName="Tabs" Click="OnTabChanged"
+                                 Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,12,0" />
+                    <RadioButton x:Name="TabDisk" Content="磁盘"
+                                 GroupName="Tabs" Click="OnTabChanged"
                                  Style="{StaticResource {x:Type RadioButton}}" />
                 </StackPanel>
 
                 <!-- Tab content -->
                 <v:ProcessListView x:Name="ProcessPanel" Grid.Row="3" />
                 <v:StatsView x:Name="StatsPanel" Grid.Row="3" Visibility="Collapsed" />
+                <v:DiskIoView x:Name="DiskPanel" Grid.Row="3" Visibility="Collapsed" />
             </Grid>
         </Border>
     </Grid>

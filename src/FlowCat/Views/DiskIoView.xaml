@@ -1,0 +1,80 @@
+<UserControl x:Class="FlowCat.Views.DiskIoView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Status -->
+        <TextBlock Grid.Row="0" Text="{Binding StatusText}" FontSize="11" Margin="0,0,0,6"
+                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+
+        <!-- Column header -->
+        <Grid Grid.Row="1" Margin="4,0,4,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="28" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="80" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="1" Text="进程" FontSize="11" Margin="6,0,0,0"
+                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+            <TextBlock Grid.Column="2" Text="读取" FontSize="11" HorizontalAlignment="Right"
+                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+            <TextBlock Grid.Column="3" Text="写入" FontSize="11" HorizontalAlignment="Right"
+                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+        </Grid>
+
+        <!-- Disk IO list -->
+        <ListView Grid.Row="2" ItemsSource="{Binding ProcessesView}"
+                  Background="Transparent" BorderThickness="0"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListViewItem">
+                                <ContentPresenter Margin="4,2" />
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="28" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="80" />
+                        </Grid.ColumnDefinitions>
+
+                        <Image Grid.Column="0" Source="{Binding Icon}" Width="20" Height="20"
+                               VerticalAlignment="Center" />
+
+                        <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontSize="13"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                                   Margin="6,0,0,0" />
+
+                        <TextBlock Grid.Column="2" Text="{Binding ReadSpeedDisplay}" FontSize="12"
+                                   VerticalAlignment="Center" HorizontalAlignment="Right"
+                                   Foreground="#FF9800" />
+
+                        <TextBlock Grid.Column="3" Text="{Binding WriteSpeedDisplay}" FontSize="12"
+                                   VerticalAlignment="Center" HorizontalAlignment="Right"
+                                   Foreground="#E91E63" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</UserControl>

@@ -1,19 +1,28 @@
+using System.Collections.ObjectModel;
 using System.Windows;
+using FlowCat.Models;
 using FlowCat.Services;
 using Microsoft.Win32;
 
 namespace FlowCat.ViewModels;
 
-public sealed class StatsViewModel : ViewModelBase
+public class DiskRankItem
+{
+    public string DisplayName { get; set; } = "";
+    public string ReadDisplay { get; set; } = "";
+    public string WriteDisplay { get; set; } = "";
+}
+
+public sealed class StatsViewModel : ViewModelBase, IDisposable
 {
     readonly LedgerService _ledger;
+    readonly System.Threading.Timer _refreshTimer;
+    bool _isVisible;
 
-    string _todayRecv = "0 B";
-    string _todaySent = "0 B";
-    string _yesterdayRecv = "0 B";
-    string _yesterdaySent = "0 B";
-    string _monthRecv = "0 B";
-    string _monthSent = "0 B";
+    string _todayRecv = "0 B", _todaySent = "0 B";
+    string _yesterdayRecv = "0 B", _yesterdaySent = "0 B";
+    string _monthRecv = "0 B", _monthSent = "0 B";
+    string _todayDiskRead = "0 B", _todayDiskWrite = "0 B";
 
     public string TodayRecv { get => _todayRecv; private set => SetField(ref _todayRecv, value); }
     public string TodaySent { get => _todaySent; private set => SetField(ref _todaySent, value); }
@@ -21,6 +30,10 @@ public sealed class StatsViewModel : ViewModelBase
     public string YesterdaySent { get => _yesterdaySent; private set => SetField(ref _yesterdaySent, value); }
     public string MonthRecv { get => _monthRecv; private set => SetField(ref _monthRecv, value); }
     public string MonthSent { get => _monthSent; private set => SetField(ref _monthSent, value); }
+    public string TodayDiskRead { get => _todayDiskRead; private set => SetField(ref _todayDiskRead, value); }
+    public string TodayDiskWrite { get => _todayDiskWrite; private set => SetField(ref _todayDiskWrite, value); }
+
+    public ObservableCollection<DiskRankItem> DiskRank { get; } = new();
 
     public RelayCommand ExportCsvCommand { get; }
 
@@ -28,6 +41,25 @@ public sealed class StatsViewModel : ViewModelBase
     {
         _ledger = ledger;
         ExportCsvCommand = new RelayCommand(_ => ExportCsv());
+        _refreshTimer = new System.Threading.Timer(_ =>
+        {
+            if (_isVisible)
+                System.Windows.Application.Current?.Dispatcher.BeginInvoke(Refresh);
+        }, null, System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
+    }
+
+    public void SetVisible(bool visible)
+    {
+        _isVisible = visible;
+        if (visible)
+        {
+            Refresh();
+            _refreshTimer.Change(3000, 3000);
+        }
+        else
+        {
+            _refreshTimer.Change(System.Threading.Timeout.Infinite, System.Threading.Timeout.Infinite);
+        }
     }
 
     public void Refresh()
@@ -47,6 +79,29 @@ public sealed class StatsViewModel : ViewModelBase
         var (mRecv, mSent) = _ledger.GetMonthSummary(today.Year, today.Month);
         MonthRecv = FormatBytes(mRecv);
         MonthSent = FormatBytes(mSent);
+
+        var (dRead, dWrite) = _ledger.GetDayDiskSummary(todayStr);
+        TodayDiskRead = FormatBytes(dRead);
+        TodayDiskWrite = FormatBytes(dWrite);
+
+        DiskRank.Clear();
+        var day = _ledger.GetDay(todayStr);
+        if (day != null)
+        {
+            var top = day.Records
+                .Where(r => r.DiskRead > 0 || r.DiskWrite > 0)
+                .OrderByDescending(r => r.DiskRead + r.DiskWrite)
+                .Take(10);
+            foreach (var r in top)
+            {
+                DiskRank.Add(new DiskRankItem
+                {
+                    DisplayName = r.DisplayName,
+                    ReadDisplay = FormatBytes(r.DiskRead),
+                    WriteDisplay = FormatBytes(r.DiskWrite)
+                });
+            }
+        }
     }
 
     void ExportCsv()
@@ -66,6 +121,8 @@ public sealed class StatsViewModel : ViewModelBase
             MessageBox.Show($"已导出到 {dlg.FileName}", "导出成功");
         }
     }
+
+    public void Dispose() => _refreshTimer.Dispose();
 
     static string FormatBytes(long bytes) => bytes switch
     {

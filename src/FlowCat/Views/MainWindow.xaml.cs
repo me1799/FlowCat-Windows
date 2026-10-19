@@ -11,6 +11,7 @@ public partial class MainWindow : FluentWindow
     readonly LedgerService _ledger = new();
     readonly ProcessListViewModel _processVm;
     readonly StatsViewModel _statsVm;
+    readonly DiskIoViewModel _diskVm;
 
     public MainWindow()
     {
@@ -23,11 +24,16 @@ public partial class MainWindow : FluentWindow
         _statsVm = new StatsViewModel(_ledger);
         StatsPanel.DataContext = _statsVm;
 
+        _diskVm = new DiskIoViewModel();
+        _diskVm.SetLedger(_ledger);
+        DiskPanel.DataContext = _diskVm;
+
         ConnLabel.SetBinding(System.Windows.Controls.TextBlock.TextProperty,
             new System.Windows.Data.Binding(nameof(ProcessListViewModel.ConnectionLabel))
             { Source = _processVm });
 
         _processVm.Initialize();
+        _diskVm.Start();
 
         if (DataContext is TrayViewModel vm)
             vm.ShowWindowRequested += () => ShowAndActivate();
@@ -39,7 +45,7 @@ public partial class MainWindow : FluentWindow
     void ShowAndActivate()
     {
         if (TabStats.IsChecked == true)
-            _statsVm.Refresh();
+            _statsVm.SetVisible(true);
 
         PositionNearTray();
         Show();
@@ -57,17 +63,11 @@ public partial class MainWindow : FluentWindow
 
     void OnTabChanged(object sender, RoutedEventArgs e)
     {
-        if (TabProcess.IsChecked == true)
-        {
-            ProcessPanel.Visibility = Visibility.Visible;
-            StatsPanel.Visibility = Visibility.Collapsed;
-        }
-        else
-        {
-            ProcessPanel.Visibility = Visibility.Collapsed;
-            StatsPanel.Visibility = Visibility.Visible;
-            _statsVm.Refresh();
-        }
+        ProcessPanel.Visibility = TabProcess.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        StatsPanel.Visibility = TabStats.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        DiskPanel.Visibility = TabDisk.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+
+        _statsVm.SetVisible(TabStats.IsChecked == true);
     }
 
     protected override void OnClosed(EventArgs e)
@@ -75,6 +75,8 @@ public partial class MainWindow : FluentWindow
         _ledger.Save();
         _ledger.Dispose();
         _processVm.Dispose();
+        _diskVm.Dispose();
+        _statsVm.Dispose();
         base.OnClosed(e);
     }
 }

@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Management;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -73,12 +73,21 @@ public static class ProcessResolver
         {
             try
             {
-                using var query = new ManagementObjectSearcher(
-                    $"SELECT ParentProcessId FROM Win32_Process WHERE ProcessId = {id}");
-                foreach (var obj in query.Get())
+                var handle = OpenProcess(0x0400, false, (uint)id); // PROCESS_QUERY_INFORMATION
+                if (handle == IntPtr.Zero)
+                    handle = OpenProcess(0x1000, false, (uint)id); // PROCESS_QUERY_LIMITED_INFORMATION
+                if (handle == IntPtr.Zero) return 0;
+
+                try
                 {
-                    var ppid = Convert.ToInt32(obj["ParentProcessId"]);
-                    return ppid;
+                    var pbi = new PROCESS_BASIC_INFORMATION();
+                    int status = NtQueryInformationProcess(handle, 0, ref pbi, Marshal.SizeOf(pbi), out _);
+                    if (status == 0)
+                        return (int)pbi.InheritedFromUniqueProcessId;
+                }
+                finally
+                {
+                    CloseHandle(handle);
                 }
             }
             catch { }
@@ -153,6 +162,27 @@ public static class ProcessResolver
                 BitmapSizeOptions.FromEmptyOptions());
         }
         catch { return null; }
+    }
+
+    [DllImport("kernel32.dll")]
+    static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
+
+    [DllImport("kernel32.dll")]
+    static extern bool CloseHandle(IntPtr hObject);
+
+    [DllImport("ntdll.dll")]
+    static extern int NtQueryInformationProcess(IntPtr processHandle, int processInformationClass,
+        ref PROCESS_BASIC_INFORMATION processInformation, int processInformationLength, out int returnLength);
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct PROCESS_BASIC_INFORMATION
+    {
+        public IntPtr ExitStatus;
+        public IntPtr PebBaseAddress;
+        public IntPtr AffinityMask;
+        public IntPtr BasePriority;
+        public IntPtr UniqueProcessId;
+        public IntPtr InheritedFromUniqueProcessId;
     }
 }
 

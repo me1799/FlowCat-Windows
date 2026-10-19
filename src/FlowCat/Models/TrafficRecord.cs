@@ -11,6 +11,8 @@ public class TrafficRecord
     public long InetBytesSent { get; set; }
     public long LanBytesReceived { get; set; }
     public long LanBytesSent { get; set; }
+    public long DiskRead { get; set; }
+    public long DiskWrite { get; set; }
     public string Ssid { get; set; } = "";
 }
 
