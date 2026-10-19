@@ -115,16 +115,22 @@ public sealed class StatsViewModel : ViewModelBase, IDisposable
         }
 
         DomainRank.Clear();
+        // Save live DNS data to ledger
         if (_dns != null)
         {
-            foreach (var (domain, bytes) in _dns.GetTopDomains(10))
+            var liveDomains = _dns.GetTopDomains(50);
+            if (liveDomains.Count > 0)
+                _ledger.RecordDomains(liveDomains);
+        }
+        // Load from ledger (includes saved + live data)
+        var domainTop = _ledger.GetDayDomainTop(todayStr);
+        foreach (var d in domainTop)
+        {
+            DomainRank.Add(new DomainRankItem
             {
-                DomainRank.Add(new DomainRankItem
-                {
-                    Domain = domain,
-                    BytesDisplay = FormatBytes(bytes)
-                });
-            }
+                Domain = d.Domain,
+                BytesDisplay = FormatBytes(d.Bytes)
+            });
         }
 
         var (dRead, dWrite) = _ledger.GetDayDiskSummary(todayStr);

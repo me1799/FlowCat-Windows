@@ -2,6 +2,7 @@
 bin/
 obj/
 publish/
+publish-lite/
 dist/
 
 # IDE
@@ -9,6 +10,9 @@ dist/
 .idea/
 *.user
 *.suo
+
+# Worktrees
+.claude/worktrees/
 
 # Config & secrets
 config/

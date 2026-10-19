@@ -128,6 +128,42 @@ public sealed class LedgerService : IDisposable
         }
     }
 
+    public void RecordDomains(List<(string domain, long bytes)> domains)
+    {
+        var today = DateTime.Now.ToString("yyyy-MM-dd");
+
+        lock (_lock)
+        {
+            var day = _ledger.Days.FirstOrDefault(d => d.Date == today);
+            if (day == null)
+            {
+                day = new DailyLedger { Date = today };
+                _ledger.Days.Add(day);
+            }
+
+            foreach (var (domain, bytes) in domains)
+            {
+                var rec = day.Domains.FirstOrDefault(d => d.Domain == domain);
+                if (rec == null)
+                {
+                    rec = new DomainRecord { Domain = domain };
+                    day.Domains.Add(rec);
+                }
+                rec.Bytes = bytes;
+            }
+        }
+    }
+
+    public List<DomainRecord> GetDayDomainTop(string date, int count = 10)
+    {
+        var day = GetDay(date);
+        if (day == null) return new();
+        return day.Domains
+            .OrderByDescending(d => d.Bytes)
+            .Take(count)
+            .ToList();
+    }
+
     public DailyLedger? GetDay(string date)
     {
         lock (_lock)

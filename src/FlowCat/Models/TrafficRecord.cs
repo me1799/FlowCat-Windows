@@ -20,6 +20,13 @@ public class DailyLedger
 {
     public string Date { get; set; } = "";
     public List<TrafficRecord> Records { get; set; } = new();
+    public List<DomainRecord> Domains { get; set; } = new();
+}
+
+public class DomainRecord
+{
+    public string Domain { get; set; } = "";
+    public long Bytes { get; set; }
 }
 
 public class Ledger
