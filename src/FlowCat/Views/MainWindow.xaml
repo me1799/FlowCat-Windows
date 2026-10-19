@@ -6,8 +6,8 @@
     xmlns:tb="http://www.hardcodet.net/taskbar"
     xmlns:vm="clr-namespace:FlowCat.ViewModels"
     xmlns:v="clr-namespace:FlowCat.Views"
-    Title="FlowCat - 流量喵"
-    Width="380" Height="560"
+    Title="小微Cat"
+    Width="400" Height="560"
     WindowStartupLocation="CenterScreen"
     ShowInTaskbar="False"
     ResizeMode="NoResize"
@@ -31,97 +31,98 @@
             <tb:TaskbarIcon.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="显示主窗口" Command="{Binding ShowWindowCommand}" />
+                    <MenuItem x:Name="OverlayMenuItem" Header="悬浮窗" IsCheckable="True" IsChecked="True"
+                              Click="OnOverlayToggle" />
+                    <MenuItem x:Name="AutoStartMenuItem" Header="开机自启" IsCheckable="True"
+                              Click="OnAutoStartToggle" />
                     <Separator />
                     <MenuItem Header="退出" Command="{Binding ExitCommand}" />
                 </ContextMenu>
             </tb:TaskbarIcon.ContextMenu>
         </tb:TaskbarIcon>
 
-        <Border CornerRadius="12" Background="{DynamicResource ApplicationBackgroundBrush}"
-                BorderBrush="{DynamicResource ControlElevationBorderBrush}" BorderThickness="1"
-                Margin="8">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="16" Opacity="0.2" ShadowDepth="2" />
-            </Border.Effect>
+        <Grid Margin="16,12,16,16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-            <Grid Margin="20">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <!-- Header -->
-                <Grid Grid.Row="0" Margin="0,0,0,16">
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                        <TextBlock Text="流量喵" FontSize="22" FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                        <TextBlock Text="FlowCat" FontSize="14" VerticalAlignment="Bottom" Margin="8,0,0,2"
-                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    </StackPanel>
+                    <TextBlock Grid.Column="0" Text="小微Cat" FontSize="20" FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock x:Name="ConnLabel" FontSize="11" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                   Margin="0,0,8,0" />
+                        <Button x:Name="PinBtn" Content="📌" Background="Transparent" BorderThickness="0"
+                                Cursor="Hand" Click="OnPinClick" FontSize="11" ToolTip="固定窗口"
+                                Opacity="0.4" Padding="4,0" />
                         <Button Content="✕" Background="Transparent" BorderThickness="0"
-                                Cursor="Hand" Click="OnCloseClick" />
+                                Cursor="Hand" Click="OnCloseClick" Padding="4,0" FontSize="11" />
                     </StackPanel>
                 </Grid>
 
-                <!-- Speed cards -->
-                <Grid Grid.Row="1" Margin="0,0,0,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <TextBlock x:Name="ConnLabel" FontSize="10" Margin="0,2,0,0"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           TextTrimming="CharacterEllipsis" />
+            </StackPanel>
 
-                    <Border Grid.Column="0" CornerRadius="8" Padding="14"
-                            Background="{DynamicResource ControlFillColorDefaultBrush}">
-                        <StackPanel>
-                            <TextBlock Text="↓ 下载" FontSize="12"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{Binding DownloadSpeed}" FontSize="20" FontWeight="Bold"
-                                       Foreground="#2196F3" Margin="0,4,0,0" />
-                        </StackPanel>
-                    </Border>
+            <!-- Speed cards -->
+            <Grid Grid.Row="1" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="10" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
 
-                    <Border Grid.Column="2" CornerRadius="8" Padding="14"
-                            Background="{DynamicResource ControlFillColorDefaultBrush}">
-                        <StackPanel>
-                            <TextBlock Text="↑ 上传" FontSize="12"
-                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                            <TextBlock Text="{Binding UploadSpeed}" FontSize="20" FontWeight="Bold"
-                                       Foreground="#4CAF50" Margin="0,4,0,0" />
-                        </StackPanel>
-                    </Border>
-                </Grid>
+                <Border Grid.Column="0" CornerRadius="10" Padding="12"
+                        Background="{DynamicResource ControlFillColorDefaultBrush}">
+                    <StackPanel>
+                        <TextBlock Text="↓ 下载" FontSize="11"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="{Binding DownloadSpeed}" FontSize="18" FontWeight="Bold"
+                                   Foreground="#2196F3" Margin="0,2,0,0" />
+                    </StackPanel>
+                </Border>
 
-                <!-- Tab buttons -->
-                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,8">
-                    <RadioButton x:Name="TabProcess" Content="进程" IsChecked="True"
-                                 GroupName="Tabs" Click="OnTabChanged"
-                                 Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,12,0" />
-                    <RadioButton x:Name="TabStats" Content="统计"
-                                 GroupName="Tabs" Click="OnTabChanged"
-                                 Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,12,0" />
-                    <RadioButton x:Name="TabDisk" Content="磁盘"
-                                 GroupName="Tabs" Click="OnTabChanged"
-                                 Style="{StaticResource {x:Type RadioButton}}" />
-                </StackPanel>
-
-                <!-- Tab content -->
-                <v:ProcessListView x:Name="ProcessPanel" Grid.Row="3" />
-                <v:StatsView x:Name="StatsPanel" Grid.Row="3" Visibility="Collapsed" />
-                <v:DiskIoView x:Name="DiskPanel" Grid.Row="3" Visibility="Collapsed" />
+                <Border Grid.Column="2" CornerRadius="10" Padding="12"
+                        Background="{DynamicResource ControlFillColorDefaultBrush}">
+                    <StackPanel>
+                        <TextBlock Text="↑ 上传" FontSize="11"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="{Binding UploadSpeed}" FontSize="18" FontWeight="Bold"
+                                   Foreground="#4CAF50" Margin="0,2,0,0" />
+                    </StackPanel>
+                </Border>
             </Grid>
-        </Border>
+
+            <!-- Tab buttons -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,6">
+                <RadioButton x:Name="TabNetwork" Content="网络" IsChecked="True"
+                             GroupName="Tabs" Click="OnTabChanged"
+                             Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,10,0"
+                             FontSize="12" />
+                <RadioButton x:Name="TabDisk" Content="磁盘"
+                             GroupName="Tabs" Click="OnTabChanged"
+                             Style="{StaticResource {x:Type RadioButton}}" Margin="0,0,10,0"
+                             FontSize="12" />
+                <RadioButton x:Name="TabStats" Content="统计"
+                             GroupName="Tabs" Click="OnTabChanged"
+                             Style="{StaticResource {x:Type RadioButton}}"
+                             FontSize="12" />
+            </StackPanel>
+
+            <!-- Tab content -->
+            <v:ProcessListView x:Name="ProcessPanel" Grid.Row="3" />
+            <v:DiskIoView x:Name="DiskPanel" Grid.Row="3" Visibility="Collapsed" />
+            <v:StatsView x:Name="StatsPanel" Grid.Row="3" Visibility="Collapsed" />
+        </Grid>
     </Grid>
 </ui:FluentWindow>

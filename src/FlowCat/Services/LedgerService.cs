@@ -144,6 +144,17 @@ public sealed class LedgerService : IDisposable
         return (day.Records.Sum(r => r.BytesReceived), day.Records.Sum(r => r.BytesSent));
     }
 
+    public List<TrafficRecord> GetDayNetworkTop(string date, int count = 10)
+    {
+        var day = GetDay(date);
+        if (day == null) return new();
+        return day.Records
+            .Where(r => r.BytesReceived > 0 || r.BytesSent > 0)
+            .OrderByDescending(r => r.BytesReceived + r.BytesSent)
+            .Take(count)
+            .ToList();
+    }
+
     public (long read, long write) GetDayDiskSummary(string date)
     {
         var day = GetDay(date);

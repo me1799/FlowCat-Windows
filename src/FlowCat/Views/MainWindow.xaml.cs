@@ -9,9 +9,13 @@ namespace FlowCat.Views;
 public partial class MainWindow : FluentWindow
 {
     readonly LedgerService _ledger = new();
+    readonly DnsMonitor _dns = new();
     readonly ProcessListViewModel _processVm;
     readonly StatsViewModel _statsVm;
     readonly DiskIoViewModel _diskVm;
+    readonly SpeedOverlay _overlay;
+
+    bool _pinned;
 
     public MainWindow()
     {
@@ -19,9 +23,10 @@ public partial class MainWindow : FluentWindow
 
         _processVm = new ProcessListViewModel();
         _processVm.SetLedger(_ledger);
+        _processVm.SetDns(_dns);
         ProcessPanel.DataContext = _processVm;
 
-        _statsVm = new StatsViewModel(_ledger);
+        _statsVm = new StatsViewModel(_ledger, _dns);
         StatsPanel.DataContext = _statsVm;
 
         _diskVm = new DiskIoViewModel();
@@ -32,6 +37,12 @@ public partial class MainWindow : FluentWindow
             new System.Windows.Data.Binding(nameof(ProcessListViewModel.ConnectionLabel))
             { Source = _processVm });
 
+        AutoStartMenuItem.IsChecked = AutoStartService.IsEnabled;
+
+        _overlay = new SpeedOverlay();
+        _overlay.DataContext = Resources["TrayVM"];
+        _overlay.Show();
+
         _processVm.Initialize();
         _diskVm.Start();
 
@@ -39,7 +50,7 @@ public partial class MainWindow : FluentWindow
             vm.ShowWindowRequested += () => ShowAndActivate();
 
         MouseLeftButtonDown += (_, _) => DragMove();
-        Deactivated += (_, _) => Hide();
+        Deactivated += (_, _) => { if (!_pinned) Hide(); };
     }
 
     void ShowAndActivate()
@@ -61,22 +72,46 @@ public partial class MainWindow : FluentWindow
 
     void OnCloseClick(object sender, RoutedEventArgs e) => Hide();
 
+    void OnPinClick(object sender, RoutedEventArgs e)
+    {
+        _pinned = !_pinned;
+        Topmost = _pinned;
+        PinBtn.Opacity = _pinned ? 1.0 : 0.4;
+    }
+
+    void OnAutoStartToggle(object sender, RoutedEventArgs e)
+    {
+        AutoStartService.Toggle();
+        AutoStartMenuItem.IsChecked = AutoStartService.IsEnabled;
+    }
+
+    void OnOverlayToggle(object sender, RoutedEventArgs e)
+    {
+        if (_overlay.IsVisible)
+            _overlay.Hide();
+        else
+            _overlay.Show();
+        OverlayMenuItem.IsChecked = _overlay.IsVisible;
+    }
+
     void OnTabChanged(object sender, RoutedEventArgs e)
     {
-        ProcessPanel.Visibility = TabProcess.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
-        StatsPanel.Visibility = TabStats.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        ProcessPanel.Visibility = TabNetwork.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         DiskPanel.Visibility = TabDisk.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
+        StatsPanel.Visibility = TabStats.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
 
         _statsVm.SetVisible(TabStats.IsChecked == true);
     }
 
     protected override void OnClosed(EventArgs e)
     {
+        _overlay.Close();
         _ledger.Save();
         _ledger.Dispose();
         _processVm.Dispose();
         _diskVm.Dispose();
         _statsVm.Dispose();
+        _dns.Dispose();
         base.OnClosed(e);
     }
 }

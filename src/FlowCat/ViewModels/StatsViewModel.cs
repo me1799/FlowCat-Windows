@@ -13,9 +13,23 @@ public class DiskRankItem
     public string WriteDisplay { get; set; } = "";
 }
 
+public class NetRankItem
+{
+    public string DisplayName { get; set; } = "";
+    public string RecvDisplay { get; set; } = "";
+    public string SentDisplay { get; set; } = "";
+}
+
+public class DomainRankItem
+{
+    public string Domain { get; set; } = "";
+    public string BytesDisplay { get; set; } = "";
+}
+
 public sealed class StatsViewModel : ViewModelBase, IDisposable
 {
     readonly LedgerService _ledger;
+    readonly DnsMonitor? _dns;
     readonly System.Threading.Timer _refreshTimer;
     bool _isVisible;
 
@@ -23,6 +37,7 @@ public sealed class StatsViewModel : ViewModelBase, IDisposable
     string _yesterdayRecv = "0 B", _yesterdaySent = "0 B";
     string _monthRecv = "0 B", _monthSent = "0 B";
     string _todayDiskRead = "0 B", _todayDiskWrite = "0 B";
+    string _yesterdayDiskRead = "0 B", _yesterdayDiskWrite = "0 B";
 
     public string TodayRecv { get => _todayRecv; private set => SetField(ref _todayRecv, value); }
     public string TodaySent { get => _todaySent; private set => SetField(ref _todaySent, value); }
@@ -32,15 +47,22 @@ public sealed class StatsViewModel : ViewModelBase, IDisposable
     public string MonthSent { get => _monthSent; private set => SetField(ref _monthSent, value); }
     public string TodayDiskRead { get => _todayDiskRead; private set => SetField(ref _todayDiskRead, value); }
     public string TodayDiskWrite { get => _todayDiskWrite; private set => SetField(ref _todayDiskWrite, value); }
+    public string YesterdayDiskRead { get => _yesterdayDiskRead; private set => SetField(ref _yesterdayDiskRead, value); }
+    public string YesterdayDiskWrite { get => _yesterdayDiskWrite; private set => SetField(ref _yesterdayDiskWrite, value); }
 
     public ObservableCollection<DiskRankItem> DiskRank { get; } = new();
+    public ObservableCollection<NetRankItem> NetRank { get; } = new();
+    public ObservableCollection<DomainRankItem> DomainRank { get; } = new();
 
-    public RelayCommand ExportCsvCommand { get; }
+    public RelayCommand Export7DaysCommand { get; }
+    public RelayCommand Export30DaysCommand { get; }
 
-    public StatsViewModel(LedgerService ledger)
+    public StatsViewModel(LedgerService ledger, DnsMonitor? dns = null)
     {
         _ledger = ledger;
-        ExportCsvCommand = new RelayCommand(_ => ExportCsv());
+        _dns = dns;
+        Export7DaysCommand = new RelayCommand(_ => ExportCsv(7));
+        Export30DaysCommand = new RelayCommand(_ => ExportCsv(30));
         _refreshTimer = new System.Threading.Timer(_ =>
         {
             if (_isVisible)
@@ -80,9 +102,38 @@ public sealed class StatsViewModel : ViewModelBase, IDisposable
         MonthRecv = FormatBytes(mRecv);
         MonthSent = FormatBytes(mSent);
 
+        NetRank.Clear();
+        var netTop = _ledger.GetDayNetworkTop(todayStr);
+        foreach (var r in netTop)
+        {
+            NetRank.Add(new NetRankItem
+            {
+                DisplayName = r.DisplayName,
+                RecvDisplay = FormatBytes(r.BytesReceived),
+                SentDisplay = FormatBytes(r.BytesSent)
+            });
+        }
+
+        DomainRank.Clear();
+        if (_dns != null)
+        {
+            foreach (var (domain, bytes) in _dns.GetTopDomains(10))
+            {
+                DomainRank.Add(new DomainRankItem
+                {
+                    Domain = domain,
+                    BytesDisplay = FormatBytes(bytes)
+                });
+            }
+        }
+
         var (dRead, dWrite) = _ledger.GetDayDiskSummary(todayStr);
         TodayDiskRead = FormatBytes(dRead);
         TodayDiskWrite = FormatBytes(dWrite);
+
+        var (ydRead, ydWrite) = _ledger.GetDayDiskSummary(yesterdayStr);
+        YesterdayDiskRead = FormatBytes(ydRead);
+        YesterdayDiskWrite = FormatBytes(ydWrite);
 
         DiskRank.Clear();
         var day = _ledger.GetDay(todayStr);
@@ -104,20 +155,20 @@ public sealed class StatsViewModel : ViewModelBase, IDisposable
         }
     }
 
-    void ExportCsv()
+    void ExportCsv(int days)
     {
         var dlg = new SaveFileDialog
         {
             Filter = "CSV 文件 (*.csv)|*.csv",
-            FileName = $"FlowCat_{DateTime.Now:yyyyMMdd}.csv"
+            FileName = $"XiaoWeiCat_{days}d_{DateTime.Now:yyyyMMdd}.csv"
         };
 
         if (dlg.ShowDialog() == true)
         {
-            var from = DateTime.Now.AddDays(-30);
+            var from = DateTime.Now.AddDays(-days);
             var to = DateTime.Now;
-            var days = _ledger.GetRange(from, to);
-            CsvExporter.Export(dlg.FileName, days);
+            var data = _ledger.GetRange(from, to);
+            CsvExporter.Export(dlg.FileName, data);
             MessageBox.Show($"已导出到 {dlg.FileName}", "导出成功");
         }
     }

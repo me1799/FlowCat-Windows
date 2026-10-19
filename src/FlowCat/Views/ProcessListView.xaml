@@ -10,9 +10,26 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Status bar -->
-        <TextBlock Grid.Row="0" Text="{Binding StatusText}" FontSize="11" Margin="0,0,0,6"
-                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+        <!-- Filter + status -->
+        <Grid Grid.Row="0" Margin="0,0,0,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <ComboBox x:Name="FilterBox" Grid.Column="0" SelectedIndex="0"
+                      SelectionChanged="OnFilterChanged" FontSize="11"
+                      MinWidth="80" Padding="4,2">
+                <ComboBoxItem Content="全部" />
+                <ComboBoxItem Content="互联网" />
+                <ComboBoxItem Content="局域网" />
+                <ComboBoxItem Content="代理" />
+            </ComboBox>
+
+            <TextBlock Grid.Column="1" Text="{Binding StatusText}" FontSize="10"
+                       VerticalAlignment="Center" HorizontalAlignment="Right"
+                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+        </Grid>
 
         <!-- Not admin warning -->
         <Border Grid.Row="2" CornerRadius="8" Padding="16"
@@ -27,13 +44,13 @@
         </Border>
 
         <!-- Column header -->
-        <Grid Grid.Row="1" Margin="4,0,4,4"
+        <Grid Grid.Row="1" Margin="4,0,16,4"
               Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisibility}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="28" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="80" />
-                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="75" />
+                <ColumnDefinition Width="75" />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="1" Text="进程" FontSize="11" Margin="6,0,0,0"
                        Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
@@ -68,7 +85,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListViewItem">
-                                <ContentPresenter Margin="4,2" />
+                                <ContentPresenter Margin="4,2,16,2" />
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
@@ -80,8 +97,8 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="28" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="80" />
-                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="75" />
+                            <ColumnDefinition Width="75" />
                         </Grid.ColumnDefinitions>
 
                         <Image Grid.Column="0" Source="{Binding Icon}" Width="20" Height="20"

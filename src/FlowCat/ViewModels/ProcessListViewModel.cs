@@ -15,12 +15,14 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
     readonly Timer _connectionTimer;
 
     LedgerService? _ledger;
+    DnsMonitor? _dns;
     string _currentSsid = "";
 
     bool _isAdmin;
     string _statusText = "正在初始化...";
     string _connectionLabel = "";
     bool _showSystem;
+    int _networkFilter; // 0=全部 1=互联网 2=局域网 3=代理
 
     public ObservableCollection<ProcessTraffic> Processes { get; } = new();
     public ICollectionView ProcessesView { get; }
@@ -53,6 +55,16 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
         }
     }
 
+    public int NetworkFilter
+    {
+        get => _networkFilter;
+        set
+        {
+            if (SetField(ref _networkFilter, value))
+                ProcessesView.Refresh();
+        }
+    }
+
     public ProcessListViewModel()
     {
         _monitor = new EtwNetworkMonitor();
@@ -70,12 +82,29 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
     }
 
     public void SetLedger(LedgerService ledger) => _ledger = ledger;
+    public void SetDns(DnsMonitor dns) => _dns = dns;
 
     bool FilterProcess(object obj)
     {
         if (obj is not ProcessTraffic pt) return false;
         if (!ShowSystem && pt.Group == ProcessGroup.System) return false;
-        if (pt.DownloadSpeed == 0 && pt.UploadSpeed == 0 && pt.BytesReceived == 0) return false;
+
+        // 只显示当前有活跃速度的进程
+        if (pt.DownloadSpeed == 0 && pt.UploadSpeed == 0) return false;
+
+        switch (NetworkFilter)
+        {
+            case 1: // 互联网
+                if (pt.InetBytesReceived == 0 && pt.InetBytesSent == 0) return false;
+                break;
+            case 2: // 局域网
+                if (pt.LanBytesReceived == 0 && pt.LanBytesSent == 0) return false;
+                break;
+            case 3: // 代理
+                if (pt.Group != ProcessGroup.Proxy) return false;
+                break;
+        }
+
         return true;
     }
 
@@ -91,6 +120,9 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
         ConnectionLabel = WifiService.GetConnectionLabel();
         _currentSsid = WifiService.GetCurrentSsid() ?? "";
         _connectionTimer.Change(5000, 5000);
+
+        _monitor.DnsTracker = _dns;
+        _dns?.Start();
 
         if (_monitor.Start())
             StatusText = "正在监控...";

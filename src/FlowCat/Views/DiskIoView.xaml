@@ -10,16 +10,16 @@
         </Grid.RowDefinitions>
 
         <!-- Status -->
-        <TextBlock Grid.Row="0" Text="{Binding StatusText}" FontSize="11" Margin="0,0,0,6"
+        <TextBlock Grid.Row="0" Text="{Binding StatusText}" FontSize="10" Margin="0,0,0,6"
                    Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
 
         <!-- Column header -->
-        <Grid Grid.Row="1" Margin="4,0,4,4">
+        <Grid Grid.Row="1" Margin="4,0,16,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="28" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="80" />
-                <ColumnDefinition Width="80" />
+                <ColumnDefinition Width="75" />
+                <ColumnDefinition Width="75" />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="1" Text="进程" FontSize="11" Margin="6,0,0,0"
                        Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
@@ -41,7 +41,7 @@
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="ListViewItem">
-                                <ContentPresenter Margin="4,2" />
+                                <ContentPresenter Margin="4,2,16,2" />
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
@@ -53,8 +53,8 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="28" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="80" />
-                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="75" />
+                            <ColumnDefinition Width="75" />
                         </Grid.ColumnDefinitions>
 
                         <Image Grid.Column="0" Source="{Binding Icon}" Width="20" Height="20"

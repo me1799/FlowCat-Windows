@@ -3,104 +3,190 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
-    <StackPanel Margin="0,8,8,0">
-        <!-- Today network -->
-        <TextBlock Text="今日网络" FontSize="13" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,6" />
-        <Grid Margin="0,0,0,12">
+    <StackPanel Margin="0,4,8,0">
+
+        <!-- Stats filter -->
+        <ComboBox x:Name="StatsFilter" SelectedIndex="0" FontSize="11"
+                  MinWidth="80" Padding="4,2" Margin="0,0,0,8"
+                  SelectionChanged="OnStatsFilterChanged">
+            <ComboBoxItem Content="网络统计" />
+            <ComboBoxItem Content="磁盘统计" />
+        </ComboBox>
+
+        <!-- Network stats panel -->
+        <StackPanel x:Name="NetStatsPanel">
+            <TextBlock Text="今日" FontSize="12" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" />
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="↓ 下载" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding TodayRecv}" FontSize="15" FontWeight="Bold" Foreground="#2196F3" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="↑ 上传" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding TodaySent}" FontSize="15" FontWeight="Bold" Foreground="#4CAF50" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="昨日" FontSize="12" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" />
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="↓ 下载" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding YesterdayRecv}" FontSize="14" Foreground="#2196F3" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="↑ 上传" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding YesterdaySent}" FontSize="14" Foreground="#4CAF50" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="本月" FontSize="12" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" />
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="↓ 下载" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding MonthRecv}" FontSize="14" Foreground="#2196F3" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="↑ 上传" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding MonthSent}" FontSize="14" Foreground="#4CAF50" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Network Top 10 -->
+            <TextBlock Text="今日 Top 10" FontSize="11" Margin="0,0,0,4"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            <ItemsControl ItemsSource="{Binding NetRank}" Margin="0,0,0,6">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="65" />
+                                <ColumnDefinition Width="65" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontSize="11"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Grid.Column="1" Text="{Binding RecvDisplay}" FontSize="10"
+                                       HorizontalAlignment="Right" Foreground="#2196F3" />
+                            <TextBlock Grid.Column="2" Text="{Binding SentDisplay}" FontSize="10"
+                                       HorizontalAlignment="Right" Foreground="#4CAF50" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Domain Top 10 -->
+            <TextBlock Text="网址 Top 10" FontSize="11" Margin="0,4,0,4"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            <ItemsControl ItemsSource="{Binding DomainRank}" Margin="0,0,0,6">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="70" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Domain}" FontSize="11"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Grid.Column="1" Text="{Binding BytesDisplay}" FontSize="10"
+                                       HorizontalAlignment="Right"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+
+        <!-- Disk stats panel -->
+        <StackPanel x:Name="DiskStatsPanel" Visibility="Collapsed">
+            <TextBlock Text="今日" FontSize="12" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" />
+            <Grid Margin="0,0,0,6">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="读取" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding TodayDiskRead}" FontSize="15" FontWeight="Bold" Foreground="#FF9800" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="写入" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding TodayDiskWrite}" FontSize="15" FontWeight="Bold" Foreground="#E91E63" />
+                </StackPanel>
+            </Grid>
+
+            <!-- Disk rank -->
+            <TextBlock Text="Top 10" FontSize="11" Margin="0,0,0,4"
+                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            <ItemsControl ItemsSource="{Binding DiskRank}" Margin="0,0,0,10">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Margin="0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="65" />
+                                <ColumnDefinition Width="65" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontSize="11"
+                                       TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            <TextBlock Grid.Column="1" Text="{Binding ReadDisplay}" FontSize="10"
+                                       HorizontalAlignment="Right" Foreground="#FF9800" />
+                            <TextBlock Grid.Column="2" Text="{Binding WriteDisplay}" FontSize="10"
+                                       HorizontalAlignment="Right" Foreground="#E91E63" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="昨日" FontSize="12" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,4" />
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="读取" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding YesterdayDiskRead}" FontSize="14" Foreground="#FF9800" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="写入" FontSize="10" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <TextBlock Text="{Binding YesterdayDiskWrite}" FontSize="14" Foreground="#E91E63" />
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <!-- Export buttons -->
+        <Grid Margin="0,4,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0">
-                <TextBlock Text="↓ 下载" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                <TextBlock Text="{Binding TodayRecv}" FontSize="16" FontWeight="Bold" Foreground="#2196F3" />
-            </StackPanel>
-            <StackPanel Grid.Column="1">
-                <TextBlock Text="↑ 上传" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                <TextBlock Text="{Binding TodaySent}" FontSize="16" FontWeight="Bold" Foreground="#4CAF50" />
-            </StackPanel>
+            <Button Grid.Column="0" Content="导出 7 天" HorizontalAlignment="Stretch" FontSize="11"
+                    Command="{Binding Export7DaysCommand}" />
+            <Button Grid.Column="2" Content="导出 30 天" HorizontalAlignment="Stretch" FontSize="11"
+                    Command="{Binding Export30DaysCommand}" />
         </Grid>
 
-        <!-- Today disk -->
-        <TextBlock Text="今日磁盘" FontSize="13" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,6" />
-        <Grid Margin="0,0,0,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0">
-                <TextBlock Text="读取" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                <TextBlock Text="{Binding TodayDiskRead}" FontSize="16" FontWeight="Bold" Foreground="#FF9800" />
-            </StackPanel>
-            <StackPanel Grid.Column="1">
-                <TextBlock Text="写入" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                <TextBlock Text="{Binding TodayDiskWrite}" FontSize="16" FontWeight="Bold" Foreground="#E91E63" />
-            </StackPanel>
-        </Grid>
-
-        <!-- Disk rank -->
-        <ItemsControl ItemsSource="{Binding DiskRank}" Margin="0,0,0,12">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Grid Margin="0,2">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="70" />
-                            <ColumnDefinition Width="70" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="{Binding DisplayName}" FontSize="12"
-                                   TextTrimming="CharacterEllipsis"
-                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                        <TextBlock Grid.Column="1" Text="{Binding ReadDisplay}" FontSize="11"
-                                   HorizontalAlignment="Right" Foreground="#FF9800" />
-                        <TextBlock Grid.Column="2" Text="{Binding WriteDisplay}" FontSize="11"
-                                   HorizontalAlignment="Right" Foreground="#E91E63" />
-                    </Grid>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
-        <!-- Yesterday -->
-        <TextBlock Text="昨日网络" FontSize="13" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,6" />
-        <Grid Margin="0,0,0,12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0">
-                <TextBlock Text="↓ 下载" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                <TextBlock Text="{Binding YesterdayRecv}" FontSize="16" Foreground="#2196F3" />
-            </StackPanel>
-            <StackPanel Grid.Column="1">
-                <TextBlock Text="↑ 上传" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                <TextBlock Text="{Binding YesterdaySent}" FontSize="16" Foreground="#4CAF50" />
-            </StackPanel>
-        </Grid>
-
-        <!-- Month -->
-        <TextBlock Text="本月网络" FontSize="13" FontWeight="SemiBold"
-                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" Margin="0,0,0,6" />
-        <Grid Margin="0,0,0,16">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0">
-                <TextBlock Text="↓ 下载" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                <TextBlock Text="{Binding MonthRecv}" FontSize="16" Foreground="#2196F3" />
-            </StackPanel>
-            <StackPanel Grid.Column="1">
-                <TextBlock Text="↑ 上传" FontSize="11" Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                <TextBlock Text="{Binding MonthSent}" FontSize="16" Foreground="#4CAF50" />
-            </StackPanel>
-        </Grid>
-
-        <!-- Export button -->
-        <Button Content="导出 CSV（近30天）" HorizontalAlignment="Stretch"
-                Command="{Binding ExportCsvCommand}" />
     </StackPanel>
     </ScrollViewer>
 </UserControl>

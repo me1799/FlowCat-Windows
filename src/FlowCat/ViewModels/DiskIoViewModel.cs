@@ -30,7 +30,7 @@ public sealed class DiskIoViewModel : ViewModelBase, IDisposable
         _monitor.DataUpdated += OnDataUpdated;
 
         ProcessesView = CollectionViewSource.GetDefaultView(Processes);
-        ProcessesView.Filter = obj => obj is ProcessDiskIo p && (p.ReadSpeed > 0 || p.WriteSpeed > 0 || p.TotalRead > 0);
+        ProcessesView.Filter = obj => obj is ProcessDiskIo p && (p.ReadSpeed > 0 || p.WriteSpeed > 0);
         ProcessesView.SortDescriptions.Add(
             new SortDescription(nameof(ProcessDiskIo.ReadSpeed), ListSortDirection.Descending));
     }

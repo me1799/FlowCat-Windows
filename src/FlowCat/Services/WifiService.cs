@@ -1,4 +1,6 @@
+using System.Net;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace FlowCat.Services;
 
@@ -26,33 +28,68 @@ public static class WifiService
         var parts = new List<string>();
 
         var ssid = GetCurrentSsid();
+        var wifiIp = GetNicIp(NetworkInterfaceType.Wireless80211);
         if (ssid != null)
-            parts.Add($"Wi-Fi: {ssid}");
+        {
+            var label = $"Wi-Fi: {ssid}";
+            if (wifiIp != null) label += $" ({wifiIp})";
+            parts.Add(label);
+        }
 
-        if (HasWiredConnection())
-            parts.Add("有线");
+        var ethernetIp = GetNicIp(NetworkInterfaceType.Ethernet);
+        if (ethernetIp != null)
+            parts.Add($"有线: {ethernetIp}");
 
         if (parts.Count == 0)
             return "未连接";
 
-        return string.Join(" + ", parts);
+        return string.Join(" | ", parts);
+    }
+
+    static string? GetNicIp(NetworkInterfaceType targetType)
+    {
+        try
+        {
+            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (nic.OperationalStatus != OperationalStatus.Up) continue;
+                if (nic.NetworkInterfaceType != targetType) continue;
+                if (IsVirtualAdapter(nic)) continue;
+
+                var props = nic.GetIPProperties();
+                foreach (var addr in props.UnicastAddresses)
+                {
+                    if (addr.Address.AddressFamily == AddressFamily.InterNetwork &&
+                        !IPAddress.IsLoopback(addr.Address))
+                        return addr.Address.ToString();
+                }
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    static bool IsVirtualAdapter(NetworkInterface nic)
+    {
+        var desc = nic.Description;
+        var name = nic.Name;
+        string[] keywords =
+        [
+            "Virtual", "VMware", "Hyper-V", "VirtualBox", "Docker",
+            "vEthernet", "WSL", "Tailscale", "ZeroTier", "Hamachi",
+            "TAP-", "TUN", "WireGuard", "Npcap", "Loopback"
+        ];
+        foreach (var kw in keywords)
+        {
+            if (desc.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
+                name.Contains(kw, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        return false;
     }
 
     static bool HasWiredConnection()
     {
-        foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
-        {
-            if (nic.OperationalStatus != OperationalStatus.Up) continue;
-            if (nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet &&
-                !nic.Description.Contains("Virtual", StringComparison.OrdinalIgnoreCase) &&
-                !nic.Description.Contains("Hyper-V", StringComparison.OrdinalIgnoreCase) &&
-                !nic.Description.Contains("VMware", StringComparison.OrdinalIgnoreCase) &&
-                !nic.Description.Contains("VirtualBox", StringComparison.OrdinalIgnoreCase) &&
-                !nic.Description.Contains("Docker", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-        return false;
+        return GetNicIp(NetworkInterfaceType.Ethernet) != null;
     }
 }

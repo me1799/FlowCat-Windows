@@ -10,7 +10,7 @@ public sealed class TrayViewModel : ViewModelBase, IDisposable
 
     string _downloadSpeed = "0 B/s";
     string _uploadSpeed = "0 B/s";
-    string _tooltip = "FlowCat - 流量喵";
+    string _tooltip = "小微Cat";
 
     public string DownloadSpeed { get => _downloadSpeed; private set => SetField(ref _downloadSpeed, value); }
     public string UploadSpeed { get => _uploadSpeed; private set => SetField(ref _uploadSpeed, value); }

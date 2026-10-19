@@ -15,6 +15,8 @@ public sealed class EtwNetworkMonitor : IDisposable
 
     readonly ConcurrentDictionary<int, PidCounters> _counters = new();
 
+    public DnsMonitor? DnsTracker { get; set; }
+
     public event Action<Dictionary<int, PidTrafficData>>? DataUpdated;
     public bool IsAdmin { get; }
 
@@ -93,6 +95,9 @@ public sealed class EtwNetworkMonitor : IDisposable
             if (isLan) Interlocked.Add(ref c.LanBytesSent, sent);
             else Interlocked.Add(ref c.InetBytesSent, sent);
         }
+
+        if (remoteIp != null && !isLan)
+            DnsTracker?.AddDomainBytes(remoteIp.ToString(), recv + sent);
     }
 
     void CalculateRates(object? _)
