@@ -28,12 +28,12 @@ public sealed class TrayViewModel : ViewModelBase, IDisposable
         _monitor.Start();
 
         ShowWindowCommand = new RelayCommand(_ => ShowWindowRequested?.Invoke());
-        ExitCommand = new RelayCommand(_ => System.Windows.Application.Current.Shutdown());
+        ExitCommand = new RelayCommand(_ => System.Windows.Application.Current?.Shutdown());
     }
 
     void OnSpeedUpdated(SpeedRate rate)
     {
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
         {
             DownloadSpeed = rate.DownloadDisplay;
             UploadSpeed = rate.UploadDisplay;

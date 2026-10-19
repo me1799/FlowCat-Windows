@@ -23,17 +23,24 @@ public partial class App : Application
         ApplicationThemeManager.Apply(ApplicationTheme.Dark);
     }
 
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _mutex?.ReleaseMutex();
+        _mutex?.Dispose();
+        base.OnExit(e);
+    }
+
     static void KillExisting()
     {
-        var current = Process.GetCurrentProcess();
+        using var current = Process.GetCurrentProcess();
         var name = current.ProcessName;
         foreach (var proc in Process.GetProcessesByName(name))
         {
             if (proc.Id != current.Id)
             {
                 try { proc.Kill(); } catch { }
-                proc.Dispose();
             }
+            proc.Dispose();
         }
     }
 }

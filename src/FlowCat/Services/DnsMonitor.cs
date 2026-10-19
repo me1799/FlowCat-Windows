@@ -7,14 +7,13 @@ namespace FlowCat.Services;
 public sealed class DnsMonitor : IDisposable
 {
     const string SessionName = "FlowCatDnsTrace";
+    const int MaxEntries = 5000;
     static readonly Guid DnsClientProvider = new("1C95126E-7EEA-49A9-A3FE-A378B03DDB4D");
 
     TraceEventSession? _session;
     Thread? _thread;
 
-    // IP string -> domain name
     readonly ConcurrentDictionary<string, string> _ipToDomain = new();
-    // domain -> total bytes
     readonly ConcurrentDictionary<string, long> _domainBytes = new();
 
     public bool Start()
@@ -25,17 +24,13 @@ public sealed class DnsMonitor : IDisposable
 
             _session = new TraceEventSession(SessionName) { StopOnDispose = true };
             _session.EnableProvider(DnsClientProvider, TraceEventLevel.Informational);
-
             _session.Source.Dynamic.All += OnDnsEvent;
 
             _thread = new Thread(() =>
             {
                 try { _session.Source.Process(); } catch { }
             })
-            {
-                IsBackground = true,
-                Name = "DNS-Monitor"
-            };
+            { IsBackground = true, Name = "DNS-Monitor" };
             _thread.Start();
             return true;
         }
@@ -44,7 +39,6 @@ public sealed class DnsMonitor : IDisposable
 
     void OnDnsEvent(TraceEvent evt)
     {
-        // Event ID 3008 = DNS query completed
         if ((int)evt.ID != 3008) return;
 
         try
@@ -55,8 +49,11 @@ public sealed class DnsMonitor : IDisposable
             if (string.IsNullOrEmpty(queryName) || string.IsNullOrEmpty(queryResults))
                 return;
 
-            var ips = queryResults.Split(';', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var ip in ips)
+            // Cap IP cache size
+            if (_ipToDomain.Count > MaxEntries)
+                _ipToDomain.Clear();
+
+            foreach (var ip in queryResults.Split(';', StringSplitOptions.RemoveEmptyEntries))
             {
                 var trimmed = ip.Trim();
                 if (!string.IsNullOrEmpty(trimmed))
@@ -66,15 +63,15 @@ public sealed class DnsMonitor : IDisposable
         catch { }
     }
 
-    public string? ResolveDomain(string ip)
-    {
-        return _ipToDomain.TryGetValue(ip, out var domain) ? domain : null;
-    }
-
     public void AddDomainBytes(string ip, long bytes)
     {
+        if (bytes <= 0) return;
         if (_ipToDomain.TryGetValue(ip, out var domain))
+        {
+            if (_domainBytes.Count > MaxEntries)
+                _domainBytes.Clear();
             _domainBytes.AddOrUpdate(domain, bytes, (_, existing) => existing + bytes);
+        }
     }
 
     public List<(string domain, long bytes)> GetTopDomains(int count = 10)

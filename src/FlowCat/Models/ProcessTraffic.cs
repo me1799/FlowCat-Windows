@@ -10,7 +10,6 @@ public class ProcessTraffic : ViewModels.ViewModelBase
     public string ExePath { get; set; } = "";
     public ImageSource? Icon { get; set; }
     public ProcessGroup Group { get; set; }
-    public HashSet<int> ChildPids { get; } = new();
 
     string _displayName = "";
     long _bytesReceived;

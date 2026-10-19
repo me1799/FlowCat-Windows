@@ -87,9 +87,4 @@ public static class WifiService
         }
         return false;
     }
-
-    static bool HasWiredConnection()
-    {
-        return GetNicIp(NetworkInterfaceType.Ethernet) != null;
-    }
 }

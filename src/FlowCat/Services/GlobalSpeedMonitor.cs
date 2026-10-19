@@ -9,8 +9,6 @@ public sealed class GlobalSpeedMonitor : IDisposable
     SpeedSnapshot? _previous;
     public event Action<SpeedRate>? SpeedUpdated;
 
-    public SpeedRate CurrentSpeed { get; private set; } = new(0, 0);
-
     public GlobalSpeedMonitor()
     {
         _timer = new Timer(Sample, null, Timeout.Infinite, Timeout.Infinite);
@@ -32,12 +30,12 @@ public sealed class GlobalSpeedMonitor : IDisposable
         var elapsed = (current.Timestamp - _previous.Timestamp).TotalSeconds;
         if (elapsed <= 0) return;
 
-        CurrentSpeed = new SpeedRate(
+        var rate = new SpeedRate(
             Math.Max(0, (current.BytesReceived - _previous.BytesReceived) / elapsed),
             Math.Max(0, (current.BytesSent - _previous.BytesSent) / elapsed));
 
         _previous = current;
-        SpeedUpdated?.Invoke(CurrentSpeed);
+        SpeedUpdated?.Invoke(rate);
     }
 
     static SpeedSnapshot TakeSnapshot()

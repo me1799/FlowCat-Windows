@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Drawing;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -27,11 +26,7 @@ public static class ProcessResolver
                 string? displayName = null;
                 ImageSource? icon = null;
 
-                try
-                {
-                    exePath = proc.MainModule?.FileName;
-                }
-                catch { }
+                try { exePath = proc.MainModule?.FileName; } catch { }
 
                 if (exePath != null)
                 {
@@ -73,9 +68,7 @@ public static class ProcessResolver
         {
             try
             {
-                var handle = OpenProcess(0x0400, false, (uint)id); // PROCESS_QUERY_INFORMATION
-                if (handle == IntPtr.Zero)
-                    handle = OpenProcess(0x1000, false, (uint)id); // PROCESS_QUERY_LIMITED_INFORMATION
+                var handle = OpenProcess(0x1000, false, (uint)id);
                 if (handle == IntPtr.Zero) return 0;
 
                 try
@@ -100,10 +93,8 @@ public static class ProcessResolver
         var visited = new HashSet<int>();
         var current = pid;
 
-        while (true)
+        while (visited.Add(current))
         {
-            if (!visited.Add(current)) break;
-
             var parentPid = GetParentPid(current);
             if (parentPid <= 4) break;
 
@@ -126,6 +117,15 @@ public static class ProcessResolver
         return current;
     }
 
+    public static void PurgeStale()
+    {
+        foreach (var pid in _cache.Keys)
+        {
+            try { Process.GetProcessById(pid); }
+            catch { _cache.TryRemove(pid, out _); _parentCache.TryRemove(pid, out _); }
+        }
+    }
+
     static bool IsSameApp(string childName, string parentName)
     {
         if (string.Equals(childName, parentName, StringComparison.OrdinalIgnoreCase))
@@ -146,20 +146,14 @@ public static class ProcessResolver
         return name;
     }
 
-    public static void Invalidate(int pid)
-    {
-        _cache.TryRemove(pid, out _);
-        _parentCache.TryRemove(pid, out _);
-    }
-
     static ImageSource? ToImageSource(Icon icon)
     {
         try
         {
-            return Imaging.CreateBitmapSourceFromHIcon(
-                icon.Handle,
-                Int32Rect.Empty,
-                BitmapSizeOptions.FromEmptyOptions());
+            var bmp = Imaging.CreateBitmapSourceFromHIcon(
+                icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            bmp.Freeze();
+            return bmp;
         }
         catch { return null; }
     }

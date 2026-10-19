@@ -33,6 +33,15 @@ public sealed class LedgerService : IDisposable
             }
         }
         catch { _ledger = new Ledger(); }
+
+        Prune(90);
+    }
+
+    void Prune(int keepDays)
+    {
+        var cutoff = DateTime.Now.AddDays(-keepDays).ToString("yyyy-MM-dd");
+        lock (_lock)
+            _ledger.Days.RemoveAll(d => string.Compare(d.Date, cutoff, StringComparison.Ordinal) < 0);
     }
 
     public void Save()

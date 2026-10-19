@@ -12,6 +12,7 @@ public sealed class EtwNetworkMonitor : IDisposable
     TraceEventSession? _session;
     Thread? _processingThread;
     readonly Timer _rateTimer;
+    int _tickCount;
 
     readonly ConcurrentDictionary<int, PidCounters> _counters = new();
 
@@ -34,13 +35,8 @@ public sealed class EtwNetworkMonitor : IDisposable
         {
             try { TraceEventSession.GetActiveSession(SessionName)?.Dispose(); } catch { }
 
-            _session = new TraceEventSession(SessionName)
-            {
-                StopOnDispose = true
-            };
-
-            _session.EnableKernelProvider(
-                KernelTraceEventParser.Keywords.NetworkTCPIP);
+            _session = new TraceEventSession(SessionName) { StopOnDispose = true };
+            _session.EnableKernelProvider(KernelTraceEventParser.Keywords.NetworkTCPIP);
 
             _session.Source.Kernel.TcpIpRecv += e =>
                 AddBytes(e.ProcessID, recv: e.size, remoteIp: e.daddr);
@@ -64,18 +60,12 @@ public sealed class EtwNetworkMonitor : IDisposable
             {
                 try { _session.Source.Process(); } catch { }
             })
-            {
-                IsBackground = true,
-                Name = "ETW-Network"
-            };
+            { IsBackground = true, Name = "ETW-Network" };
             _processingThread.Start();
             _rateTimer.Change(1000, 1000);
             return true;
         }
-        catch
-        {
-            return false;
-        }
+        catch { return false; }
     }
 
     void AddBytes(int pid, int recv = 0, int sent = 0, IPAddress? remoteIp = null)
@@ -111,12 +101,6 @@ public sealed class EtwNetworkMonitor : IDisposable
             var sent = Interlocked.Read(ref c.BytesSent);
             var dlSpeed = Math.Max(0, recv - c.PrevReceived);
             var ulSpeed = Math.Max(0, sent - c.PrevSent);
-
-            var inetRecv = Interlocked.Read(ref c.InetBytesReceived);
-            var inetSent = Interlocked.Read(ref c.InetBytesSent);
-            var lanRecv = Interlocked.Read(ref c.LanBytesReceived);
-            var lanSent = Interlocked.Read(ref c.LanBytesSent);
-
             c.PrevReceived = recv;
             c.PrevSent = sent;
 
@@ -124,14 +108,29 @@ public sealed class EtwNetworkMonitor : IDisposable
             {
                 snapshot[kvp.Key] = new PidTrafficData(
                     recv, sent, dlSpeed, ulSpeed,
-                    inetRecv, inetSent, lanRecv, lanSent);
+                    Interlocked.Read(ref c.InetBytesReceived),
+                    Interlocked.Read(ref c.InetBytesSent),
+                    Interlocked.Read(ref c.LanBytesReceived),
+                    Interlocked.Read(ref c.LanBytesSent));
             }
         }
 
         DataUpdated?.Invoke(snapshot);
+
+        // Purge stale PIDs every 60 ticks
+        if (++_tickCount % 60 == 0)
+            PurgeStale();
     }
 
-    public void RemoveProcess(int pid) => _counters.TryRemove(pid, out _);
+    void PurgeStale()
+    {
+        foreach (var pid in _counters.Keys)
+        {
+            try { System.Diagnostics.Process.GetProcessById(pid); }
+            catch { _counters.TryRemove(pid, out _); }
+        }
+        ProcessResolver.PurgeStale();
+    }
 
     public void Stop()
     {
@@ -159,14 +158,10 @@ public sealed class EtwNetworkMonitor : IDisposable
 
     class PidCounters
     {
-        public long BytesReceived;
-        public long BytesSent;
-        public long PrevReceived;
-        public long PrevSent;
-        public long InetBytesReceived;
-        public long InetBytesSent;
-        public long LanBytesReceived;
-        public long LanBytesSent;
+        public long BytesReceived, BytesSent;
+        public long PrevReceived, PrevSent;
+        public long InetBytesReceived, InetBytesSent;
+        public long LanBytesReceived, LanBytesSent;
     }
 }
 
