@@ -44,10 +44,22 @@
         </Grid>
 
         <!-- Process list -->
-        <ListView Grid.Row="2" ItemsSource="{Binding Processes}"
+        <ListView Grid.Row="2" ItemsSource="{Binding ProcessesView}"
                   Background="Transparent" BorderThickness="0"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                   Visibility="{Binding IsAdmin, Converter={StaticResource BoolToVisibility}}">
+            <ListView.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       Margin="0,8,0,4"
+                                       Visibility="{Binding Name, Converter={StaticResource GroupNameToVisibility}}" />
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </ListView.GroupStyle>
             <ListView.ItemContainerStyle>
                 <Style TargetType="ListViewItem">
                     <Setter Property="Padding" Value="0" />

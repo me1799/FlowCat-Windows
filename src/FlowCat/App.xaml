@@ -13,6 +13,7 @@
             </ResourceDictionary.MergedDictionaries>
             <v:BoolToVisibilityConverter x:Key="BoolToVisibility" />
             <v:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
+            <v:GroupNameToVisibilityConverter x:Key="GroupNameToVisibility" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

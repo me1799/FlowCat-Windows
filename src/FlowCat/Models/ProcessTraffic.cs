@@ -1,5 +1,5 @@
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using FlowCat.Services;
 
 namespace FlowCat.Models;
 
@@ -7,14 +7,22 @@ public class ProcessTraffic : ViewModels.ViewModelBase
 {
     public int ProcessId { get; init; }
     public string ProcessName { get; init; } = "";
-    public string DisplayName { get; set; } = "";
     public string ExePath { get; set; } = "";
     public ImageSource? Icon { get; set; }
+    public ProcessGroup Group { get; set; }
+    public HashSet<int> ChildPids { get; } = new();
 
+    string _displayName = "";
     long _bytesReceived;
     long _bytesSent;
     double _downloadSpeed;
     double _uploadSpeed;
+
+    public string DisplayName
+    {
+        get => _displayName;
+        set => SetField(ref _displayName, value);
+    }
 
     public long BytesReceived
     {
@@ -42,6 +50,13 @@ public class ProcessTraffic : ViewModels.ViewModelBase
 
     public string DownloadSpeedDisplay => FormatSpeed(DownloadSpeed);
     public string UploadSpeedDisplay => FormatSpeed(UploadSpeed);
+
+    public string GroupLabel => Group switch
+    {
+        ProcessGroup.Proxy => "代理",
+        ProcessGroup.System => "系统",
+        _ => ""
+    };
 
     static string FormatSpeed(double bytesPerSec) => bytesPerSec switch
     {
