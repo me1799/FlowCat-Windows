@@ -10,13 +10,13 @@ namespace FlowCat.ViewModels;
 public sealed class ProcessListViewModel : ViewModelBase, IDisposable
 {
     readonly EtwNetworkMonitor _monitor;
-    // PID -> root app PID
     readonly Dictionary<int, int> _pidToRoot = new();
-    // Root PID -> merged ProcessTraffic
     readonly Dictionary<int, ProcessTraffic> _rootMap = new();
+    readonly Timer _connectionTimer;
 
     bool _isAdmin;
     string _statusText = "正在初始化...";
+    string _connectionLabel = "";
     bool _showSystem;
 
     public ObservableCollection<ProcessTraffic> Processes { get; } = new();
@@ -34,6 +34,12 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
         private set => SetField(ref _statusText, value);
     }
 
+    public string ConnectionLabel
+    {
+        get => _connectionLabel;
+        private set => SetField(ref _connectionLabel, value);
+    }
+
     public bool ShowSystem
     {
         get => _showSystem;
@@ -49,12 +55,13 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
         _monitor = new EtwNetworkMonitor();
         _monitor.DataUpdated += OnDataUpdated;
 
+        _connectionTimer = new Timer(RefreshConnection, null, Timeout.Infinite, Timeout.Infinite);
+
         ProcessesView = CollectionViewSource.GetDefaultView(Processes);
         ProcessesView.Filter = FilterProcess;
         ProcessesView.SortDescriptions.Add(
             new SortDescription(nameof(ProcessTraffic.DownloadSpeed), ListSortDirection.Descending));
 
-        using var groupDesc = ProcessesView.GroupDescriptions as IDisposable;
         ProcessesView.GroupDescriptions.Add(
             new PropertyGroupDescription(nameof(ProcessTraffic.GroupLabel)));
     }
@@ -76,18 +83,20 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        ConnectionLabel = WifiService.GetConnectionLabel();
+        _connectionTimer.Change(5000, 5000);
+
         if (_monitor.Start())
             StatusText = "正在监控...";
         else
             StatusText = "ETW 会话启动失败";
     }
 
-    void OnDataUpdated(Dictionary<int, (long recv, long sent, double dlSpeed, double ulSpeed)> snapshot)
+    void OnDataUpdated(Dictionary<int, PidTrafficData> snapshot)
     {
         Application.Current?.Dispatcher.Invoke(() =>
         {
-            // Accumulate per-root-pid
-            var rootAccum = new Dictionary<int, (long recv, long sent, double dl, double ul)>();
+            var rootAccum = new Dictionary<int, AccumData>();
 
             foreach (var (pid, data) in snapshot)
             {
@@ -101,15 +110,24 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
 
                 if (rootAccum.TryGetValue(rootPid, out var existing))
                 {
-                    rootAccum[rootPid] = (
-                        existing.recv + data.recv,
-                        existing.sent + data.sent,
-                        existing.dl + data.dlSpeed,
-                        existing.ul + data.ulSpeed);
+                    existing.Recv += data.Recv;
+                    existing.Sent += data.Sent;
+                    existing.DlSpeed += data.DlSpeed;
+                    existing.UlSpeed += data.UlSpeed;
+                    existing.InetRecv += data.InetRecv;
+                    existing.InetSent += data.InetSent;
+                    existing.LanRecv += data.LanRecv;
+                    existing.LanSent += data.LanSent;
                 }
                 else
                 {
-                    rootAccum[rootPid] = (data.recv, data.sent, data.dlSpeed, data.ulSpeed);
+                    rootAccum[rootPid] = new AccumData
+                    {
+                        Recv = data.Recv, Sent = data.Sent,
+                        DlSpeed = data.DlSpeed, UlSpeed = data.UlSpeed,
+                        InetRecv = data.InetRecv, InetSent = data.InetSent,
+                        LanRecv = data.LanRecv, LanSent = data.LanSent
+                    };
                 }
             }
 
@@ -135,10 +153,14 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
                     Processes.Add(pt);
                 }
 
-                pt.BytesReceived = data.recv;
-                pt.BytesSent = data.sent;
-                pt.DownloadSpeed = data.dl;
-                pt.UploadSpeed = data.ul;
+                pt.BytesReceived = data.Recv;
+                pt.BytesSent = data.Sent;
+                pt.DownloadSpeed = data.DlSpeed;
+                pt.UploadSpeed = data.UlSpeed;
+                pt.InetBytesReceived = data.InetRecv;
+                pt.InetBytesSent = data.InetSent;
+                pt.LanBytesReceived = data.LanRecv;
+                pt.LanBytesSent = data.LanSent;
             }
 
             foreach (var pt in Processes)
@@ -157,9 +179,23 @@ public sealed class ProcessListViewModel : ViewModelBase, IDisposable
         });
     }
 
+    void RefreshConnection(object? _)
+    {
+        var label = WifiService.GetConnectionLabel();
+        Application.Current?.Dispatcher.Invoke(() => ConnectionLabel = label);
+    }
+
     public void Dispose()
     {
+        _connectionTimer.Dispose();
         _monitor.DataUpdated -= OnDataUpdated;
         _monitor.Dispose();
+    }
+
+    class AccumData
+    {
+        public long Recv, Sent;
+        public double DlSpeed, UlSpeed;
+        public long InetRecv, InetSent, LanRecv, LanSent;
     }
 }

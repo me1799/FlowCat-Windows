@@ -53,17 +53,28 @@
                 </Grid.RowDefinitions>
 
                 <!-- Header -->
-                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
-                    <TextBlock Text="流量喵" FontSize="22" FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
-                    <TextBlock Text="FlowCat" FontSize="14" VerticalAlignment="Bottom" Margin="8,0,0,2"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
 
-                    <Button Content="✕" HorizontalAlignment="Right"
-                            Background="Transparent" BorderThickness="0"
-                            Margin="120,0,0,0" Cursor="Hand"
-                            Click="OnCloseClick" />
-                </StackPanel>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <TextBlock Text="流量喵" FontSize="22" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                        <TextBlock Text="FlowCat" FontSize="14" VerticalAlignment="Bottom" Margin="8,0,0,2"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding ConnectionLabel, Source={StaticResource ProcessListVM}}"
+                                   FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                   Margin="0,0,8,0" />
+                        <Button Content="✕" Background="Transparent" BorderThickness="0"
+                                Cursor="Hand" Click="OnCloseClick" />
+                    </StackPanel>
+                </Grid>
 
                 <!-- Speed cards -->
                 <Grid Grid.Row="1" Margin="0,0,0,16">

@@ -17,6 +17,10 @@ public class ProcessTraffic : ViewModels.ViewModelBase
     long _bytesSent;
     double _downloadSpeed;
     double _uploadSpeed;
+    long _inetRecv;
+    long _inetSent;
+    long _lanRecv;
+    long _lanSent;
 
     public string DisplayName
     {
@@ -48,8 +52,34 @@ public class ProcessTraffic : ViewModels.ViewModelBase
         set { if (SetField(ref _uploadSpeed, value)) OnPropertyChanged(nameof(UploadSpeedDisplay)); }
     }
 
+    public long InetBytesReceived
+    {
+        get => _inetRecv;
+        set { if (SetField(ref _inetRecv, value)) OnPropertyChanged(nameof(InetTotalDisplay)); }
+    }
+
+    public long InetBytesSent
+    {
+        get => _inetSent;
+        set { if (SetField(ref _inetSent, value)) OnPropertyChanged(nameof(InetTotalDisplay)); }
+    }
+
+    public long LanBytesReceived
+    {
+        get => _lanRecv;
+        set { if (SetField(ref _lanRecv, value)) OnPropertyChanged(nameof(LanTotalDisplay)); }
+    }
+
+    public long LanBytesSent
+    {
+        get => _lanSent;
+        set { if (SetField(ref _lanSent, value)) OnPropertyChanged(nameof(LanTotalDisplay)); }
+    }
+
     public string DownloadSpeedDisplay => FormatSpeed(DownloadSpeed);
     public string UploadSpeedDisplay => FormatSpeed(UploadSpeed);
+    public string InetTotalDisplay => FormatBytes(InetBytesReceived + InetBytesSent);
+    public string LanTotalDisplay => FormatBytes(LanBytesReceived + LanBytesSent);
 
     public string GroupLabel => Group switch
     {
@@ -64,5 +94,13 @@ public class ProcessTraffic : ViewModels.ViewModelBase
         < 1024 * 1024 => $"{bytesPerSec / 1024:F1} KB/s",
         < 1024 * 1024 * 1024 => $"{bytesPerSec / (1024 * 1024):F2} MB/s",
         _ => $"{bytesPerSec / (1024 * 1024 * 1024):F2} GB/s"
+    };
+
+    static string FormatBytes(long bytes) => bytes switch
+    {
+        < 1024 => $"{bytes} B",
+        < 1024 * 1024 => $"{bytes / 1024.0:F1} KB",
+        < 1024L * 1024 * 1024 => $"{bytes / (1024.0 * 1024):F1} MB",
+        _ => $"{bytes / (1024.0 * 1024 * 1024):F2} GB"
     };
 }
