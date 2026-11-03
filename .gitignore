@@ -17,6 +17,11 @@ dist/
 # Build artifacts
 *.pdb
 
+# Archives
+*.7z
+*.zip
+*.rar
+
 # Config & secrets
 config/
 *.env
