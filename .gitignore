@@ -11,8 +11,11 @@ dist/
 *.user
 *.suo
 
-# Worktrees
-.claude/worktrees/
+# Claude Code local files
+.claude/
+
+# Build artifacts
+*.pdb
 
 # Config & secrets
 config/
