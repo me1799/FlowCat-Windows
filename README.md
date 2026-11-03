@@ -25,7 +25,7 @@ Windows 网络 / 磁盘监控小工具。托盘常驻，实时显示全局网速
 **交互**
 - 系统托盘 + 可拖动悬浮速度窗
 - 主窗口从托盘弹出，失焦隐藏，可固定置顶
-- 开机自启
+- 开机自启（计划任务，登录时以管理员权限启动）
 - 单实例保护
 - 深色主题
 
@@ -33,7 +33,7 @@ Windows 网络 / 磁盘监控小工具。托盘常驻，实时显示全局网速
 
 - Windows 10 1809（17763）及以上 / Windows 11，x64
 - 自包含发布，无需安装 .NET 运行时
-- 进程级网络监控需要管理员权限
+- 管理员权限：进程级网络流量采集需要；在托盘中开启「开机自启」同样需要（会创建一个最高权限的计划任务）
 
 ## 使用
 
@@ -56,16 +56,29 @@ Windows 网络 / 磁盘监控小工具。托盘常驻，实时显示全局网速
 FlowCat/
 ├── FlowCat.sln
 ├── src/FlowCat/
-│   ├── Models/       # 数据模型
-│   ├── Services/     # ETW、DNS、磁盘 I/O、账本、CSV 等
+│   ├── App.xaml / App.xaml.cs        # 入口、单实例、深色主题
+│   ├── Models/                       # 流量、磁盘、账本数据模型
+│   ├── Services/
+│   │   ├── EtwNetworkMonitor.cs      # ETW 进程网络流量
+│   │   ├── DnsMonitor.cs             # DNS 事件 → 域名流量
+│   │   ├── DiskIoMonitor.cs          # 进程磁盘 I/O
+│   │   ├── GlobalSpeedMonitor.cs     # 全局网速
+│   │   ├── ProcessResolver.cs        # 进程名 / 图标 / 父子关系
+│   │   ├── ProxyDetector.cs          # 代理与系统进程分组
+│   │   ├── TrafficClassifier.cs      # 互联网 / 局域网判定
+│   │   ├── WifiService.cs            # SSID 与网卡 IP
+│   │   ├── LedgerService.cs          # 本地 JSON 账本
+│   │   ├── CsvExporter.cs            # CSV 导出
+│   │   └── AutoStartService.cs       # 开机自启（计划任务）
 │   ├── ViewModels/
 │   └── Views/
-└── publish/          # 发布产物
+└── publish/                          # 发布产物
 ```
 
 ## 构建
 
 ```bash
+dotnet restore
 dotnet build
 dotnet publish src/FlowCat/FlowCat.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -o publish
 ```
