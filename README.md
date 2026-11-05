@@ -2,6 +2,13 @@
 
 Windows 网络 / 磁盘监控小工具。托盘常驻，实时显示全局网速，并用 ETW 内核事件按进程统计网络流量与磁盘读写。
 
+## 界面预览
+
+| 网络监控 | 磁盘监控 | 流量统计 |
+| :---: | :---: | :---: |
+| <a href="images/3.JPG"><img src="images/3.JPG" width="280" alt="网络监控"></a> | <a href="images/1.JPG"><img src="images/1.JPG" width="280" alt="磁盘监控"></a> | <a href="images/2.JPG"><img src="images/2.JPG" width="280" alt="流量统计"></a> |
+| 按进程实时网速 | 进程磁盘读写 | 今日 / 昨日 / 本月汇总 |
+
 ## 功能
 
 **网络**
